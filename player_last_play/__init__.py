@@ -84,6 +84,8 @@ def get_player(server, context):
 
 
 def clean_player(server, context):
+    if __mcdr_server.get_permission_level(server) < 4:
+        resp = f'&c你没有权限清除玩家的最近游玩时间'
     player = context['player']
     resp:str
     if player in data:
