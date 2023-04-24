@@ -38,6 +38,8 @@ def on_load(server: PluginServerInterface, old):
     
 
 def on_player_left(server: PluginServerInterface, player: str):
+    if player.startswith('bot_') or player.startswith('Bot_'):
+        return
     now = datetime.datetime.now().strftime('%Y-%m-%d')
     data[player] = now
 
@@ -59,8 +61,8 @@ def player_list(server):
     # 先统计在线的玩家
     for player in online_players:
         # 跳过假人
-        if not player.startswith('bot_'):
-            resp = resp + f'\n|- &a{player}&r:&a在线'
+        if not player.startswith('bot_') and not player.startwith('Bot_'):
+            resp = resp + f'\n&r|- &a{player}&r:&a在线'
 
     for player in data:
         # 只统计不在线的玩家
@@ -84,7 +86,7 @@ def get_player(server, context):
 
 
 def clean_player(server, context):
-    if __mcdr_server.get_permission_level(server) < 4:
+    if __mcdr_server.get_permission_level(server) < 3:
         resp = f'&c你没有权限清除玩家的最近游玩时间'
     player = context['player']
     resp:str
