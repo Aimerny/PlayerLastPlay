@@ -1,7 +1,7 @@
 {
     "id": "player_last_play",
     "version": "1.0.0",
-    "name": "PlayerLastJoin",
+    "name": "PlayerLastPlay",
     "description": {
       "en_us": "Record player lastime left the server",
       "zh_cn": "记录与查询玩家最近游玩时间,方便检查服务器玩家活跃度"
