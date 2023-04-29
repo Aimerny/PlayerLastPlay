@@ -7,7 +7,7 @@
       "zh_cn": "记录与查询玩家最近游玩时间,方便检查服务器玩家活跃度"
     },
     "author": "Aimerny",
-    "link": "https://github.com/AnzhiZhang/MCDReforgedPlugins/tree/master/qq_api",
+    "link": "https://github.com/Aimerny/playerLastPlay",
     "dependencies": {
       "online_player_api": "^1.0.0"
     }
