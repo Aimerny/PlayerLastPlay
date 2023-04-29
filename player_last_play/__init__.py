@@ -61,7 +61,7 @@ def player_list(server):
     # 先统计在线的玩家
     for player in online_players:
         # 跳过假人
-        if not player.startswith('bot_') and not player.startwith('Bot_'):
+        if not player.startswith('bot_') and not player.startswith('Bot_'):
             resp = resp + f'\n&r|- &a{player}&r:&a在线'
 
     for player in data:
