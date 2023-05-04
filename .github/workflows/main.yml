@@ -22,7 +22,7 @@ jobs:
         run : ls -la
 
       - name: ZIP
-        run: zip -r playerLastPlay-v1.0.5.zip ./ -x './.gitignore' -x './.github/*' -x './.git/*' -x '*.DS_Store'
+        run: zip -r playerLastPlay-${{ steps.get_version.outputs.VERSION }}.zip ./ -x './.gitignore' -x './.github/*' -x './.git/*' -x '*.DS_Store'
       - name: Upload Artifact
         uses: actions/upload-artifact@v1
         with: 
