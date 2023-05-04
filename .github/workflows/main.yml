@@ -1,0 +1,35 @@
+name: Main
+on: 
+  push: 
+    tags:
+      - "v*.*.*"
+jobs: 
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Get version
+        id: get_version
+        run: echo ::set-output name=VERSION::${GITHUB_REF/refs\/tags\//}
+
+      - name: Echo Version
+        run: echo ${{ steps.get_version.outputs.VERSION }}
+      - name: Echo App
+        run : ls -la
+
+      - name: ZIP
+        run: zip -r playerLastPlay-v1.0.5.zip ./ -x './.gitignore' -x './.github/*' -x './.git/*' -x '*.DS_Store'
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v1
+        with: 
+          name: playerLastPlay-${{ steps.get_version.outputs.VERSION }}.zip
+          path: ./playerLastPlay-${{ steps.get_version.outputs.VERSION }}.zip
+
+      
+
+          
+
