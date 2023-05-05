@@ -32,6 +32,12 @@ jobs:
         with: 
           name: playerLastPlay-${{ steps.get_version.outputs.VERSION }}.mcdr
           path: ./playerLastPlay-${{ steps.get_version.outputs.VERSION }}.mcdr
+          
+      - name: Upload to Github release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: playerLastPlay-${{ steps.get_version.outputs.VERSION }}.mcdr
+          tag_name: ${{ steps.get_version.outputs.VERSION }}
 
       
 
