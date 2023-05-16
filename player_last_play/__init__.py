@@ -167,7 +167,6 @@ def sort_date(player_list:List[PlayerInfo]) -> List[PlayerInfo]:
     return sorted_player_list
 
 def get_color_by_activity(activity:str) -> str:
-    print(activity)
     if activity == 'active' :
         # 绿色
         return 'a'
