@@ -99,22 +99,24 @@ def help_info(server):
         server.reply(line)
 
 
-def player_list(server, context):
+def player_list(source: CommandSource, context):
     if 'index' in context:
         index = context['index'] - 1
     else:
         index = 0
     if index < 0:
-        return server.reply("查询页数不能小于1")
+        return source.reply("查询页数不能小于1")
     pagesize = config.pageSize
-    resp = '------ &a玩家列表 &r------\n'
+    resp = RTextList('------ 玩家列表 ------\n')
     online_players = get_online_players()
+    online_result_list = []
+    offline_result_list = []
     result_list = []
     # 先统计在线的玩家
     for player in online_players:
         # 跳过假人
         if not player.startswith('bot_') and not player.startswith('Bot_'):
-            result_list.append(f'&r|- &a{player}&r:&a在线')
+            online_result_list.append((player, '在线', RColor.green))
 
     # 作排序，按日期从近到远排序
     offline_players = []
@@ -126,12 +128,13 @@ def player_list(server, context):
     sorted_off_players = sort_date(offline_players)
     for player in sorted_off_players:
         # 按游玩先后顺序排序
-        result_list.append(
-            f'&r|- &a{player.player}&r:&{get_color_by_activity(player.activity)}{player.last_date.strftime("%Y-%m-%d")}')
+        offline_result_list.append((player.player, player.last_date.strftime("%Y-%m-%d"), get_color_by_activity(player.activity)))
     # 查分页
+    result_list.extend(online_result_list)
+    result_list.extend(offline_result_list)
     total = len(result_list)
     if total == 0:
-        resp += f'&r>>>>>> 第0页/共0页 <<<<<<'
+        resp.append(RText('<<< 第0页/共0页 >>>'))
     else:
         pages = math.ceil(total / pagesize)
         if 0 <= index < pages - 1:
@@ -140,38 +143,45 @@ def player_list(server, context):
             cur_page = result_list[index * pagesize:]
         else:
             # 大于最大的pages
-            return server.reply('超过总页数,无法查询')
-        for msg in cur_page:
-            resp += msg + '\n'
-        resp += f'&r>>>>>> 第{index + 1}页/共{pages}页 <<<<<<'
-    server.reply(replace_code(resp))
+            return source.reply('超过总页数,无法查询')
+
+        def convert_to_rtext(player_name, time, color):
+            return RText(f'|-> {player_name}:{time}\n', color=color)
+
+        for player_tuple in cur_page:
+            resp.append(convert_to_rtext(player_tuple[0], player_tuple[1], player_tuple[2]))
+        resp.append(RTextList(
+            RText('<<<', color=RColor.white).h('上一页').c(RAction.run_command, f'!!plp list {index - 1}'),
+            RText(f'第{index + 1}页/共{pages}页'),
+            RText('>>>', color=RColor.white).h('下一页').c(RAction.run_command, f'!!plp list {index + 1}')
+        ).set_color(RColor.gray))
+    source.reply(resp)
 
 
-def get_player(server, context):
+def get_player(source, context):
     player = context['player']
     online_players = get_online_players()
-    resp: str
     if player in online_players:
-        resp = f'玩家&a{player}&r当前&a在线'
+        resp = RText(f'玩家{player}当前在线').set_color(RColor.green)
     elif player in data:
-        playerInfo = PlayerInfo(player, datetime.datetime.strptime(data[player], '%Y-%m-%d'))
-        resp = f'玩家&a{player}&r最近的游玩时间为&{get_color_by_activity(playerInfo.activity)}{data[player]}'
+        player_info = PlayerInfo(player, datetime.datetime.strptime(data[player], '%Y-%m-%d'))
+        resp = RText(f'玩家{player}最近的游玩时间为{data[player]}').set_color(get_color_by_activity(player_info.get_activity()))
     else:
-        resp = f'当前没有玩家&a{player}&r的游玩时间'
-    server.reply(replace_code(resp))
+        resp = RText(f'当前没有玩家{player}的游玩时间').set_color(RColor.yellow)
+    source.reply(resp)
 
 
-def clean_player(server, context):
-    if __mcdr_server.get_permission_level(server) < 3:
-        resp = f'&c你没有权限清除玩家的最近游玩时间'
-    player = context['player']
-    resp: str
+def clean_player(source, context):
+    if __mcdr_server.get_permission_level(source) < 3:
+        resp = RText('你没有权限清除玩家的最近游玩时间').set_color(RColor.red)
+        return source.reply(resp)
+    player = context.get('player')
     if player in data:
         del data[player]
-        resp = f'已清除玩家&a{player}&r最近的游玩时间'
+        resp = RText(f'已清除玩家{player}最近的游玩时间').set_color(RColor.green)
     else:
-        resp = f'当前没有玩家&a{player}&r的游玩时间'
-    server.reply(replace_code(resp))
+        resp = RText(f'当前没有玩家{player}的游玩时间').set_color(RColor.red)
+    source.reply(resp)
 
 
 # -------------------------
@@ -182,30 +192,26 @@ def save_data(server: PluginServerInterface):
     server.save_config_simple({'player_list': data}, 'data.json')
 
 
-def replace_code(msg: str) -> str:
-    return msg.replace('&', '§')
-
-
 def get_online_players() -> list:
     online_player_api = __mcdr_server.get_plugin_instance('online_player_api')
     return online_player_api.get_player_list()
 
 
-def sort_date(player_list: List[PlayerInfo]) -> List[PlayerInfo]:
-    sorted_player_list = sorted(player_list, key=lambda player: player.last_date.timestamp(), reverse=config.reverse)
+def sort_date(players: List[PlayerInfo]) -> List[PlayerInfo]:
+    sorted_player_list = sorted(players, key=lambda player: player.last_date.timestamp(), reverse=config.reverse)
     return sorted_player_list
 
 
-def get_color_by_activity(activity: str) -> str:
+def get_color_by_activity(activity: str) -> RColor:
     if activity == 'active':
         # 绿色
-        return 'a'
+        return RColor.green
     elif activity == 'normal':
         # 黄色
-        return 'e'
+        return RColor.yellow
     elif activity == 'inactive':
         # 红色
-        return 'c'
+        return RColor.red
     else:
         # 灰色
-        return '7'
+        return RColor.gray
