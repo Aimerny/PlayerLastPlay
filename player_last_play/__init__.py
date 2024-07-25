@@ -1,4 +1,5 @@
 import math
+import re
 from typing import List
 from mcdreforged.api.all import *
 import datetime
@@ -26,6 +27,8 @@ class Config(Serializable):
     reverse: bool = True
     # 分页查询的大小,默认10
     pageSize: int = 10
+    # 忽略玩家正则列表
+    ignorePlayerRegexes: List[str] = ['^bot_.*$', '^Bot_.*$']
 
 
 config: Config
@@ -47,9 +50,9 @@ class PlayerInfo:
 
         if days < config.active:
             return 'active'
-        elif days >= config.active and days < config.normal:
+        elif config.active <= days < config.normal:
             return 'normal'
-        elif days >= config.normal and days < config.inactive:
+        elif config.normal <= days < config.inactive:
             return 'inactive'
         else:
             # (这么久不上线，给红的)
@@ -82,7 +85,7 @@ def on_load(server: PluginServerInterface, old):
 
 
 def on_player_left(server: PluginServerInterface, player: str):
-    if player.startswith('bot_') or player.startswith('Bot_'):
+    if is_ignore_player(player, config.ignorePlayerRegexes):
         return
     now = datetime.datetime.now().strftime('%Y-%m-%d')
     data[player] = now
@@ -99,6 +102,14 @@ def help_info(server):
         server.reply(line)
 
 
+def is_ignore_player(player: str, ignore_regex_list: List[str]) -> bool:
+    for regex in ignore_regex_list:
+        match = re.match(regex, player)
+        if match is not None:
+            return True
+    return False
+
+
 def player_list(source: CommandSource, context):
     if 'index' in context:
         index = context['index'] - 1
@@ -113,9 +124,10 @@ def player_list(source: CommandSource, context):
     offline_result_list = []
     result_list = []
     # 先统计在线的玩家
+    print(online_players)
     for player in online_players:
         # 跳过假人
-        if not player.startswith('bot_') and not player.startswith('Bot_'):
+        if not is_ignore_player(player, config.ignorePlayerRegexes):
             online_result_list.append((player, '在线', RColor.green))
 
     # 作排序，按日期从近到远排序
@@ -151,9 +163,9 @@ def player_list(source: CommandSource, context):
         for player_tuple in cur_page:
             resp.append(convert_to_rtext(player_tuple[0], player_tuple[1], player_tuple[2]))
         resp.append(RTextList(
-            RText('<<<', color=RColor.white).h('上一页').c(RAction.run_command, f'!!plp list {index - 1}'),
+            RText('<<<', color=RColor.white).h('上一页').c(RAction.run_command, f'!!plp list {index}'),
             RText(f'第{index + 1}页/共{pages}页'),
-            RText('>>>', color=RColor.white).h('下一页').c(RAction.run_command, f'!!plp list {index + 1}')
+            RText('>>>', color=RColor.white).h('下一页').c(RAction.run_command, f'!!plp list {index + 2}')
         ).set_color(RColor.gray))
     source.reply(resp)
 
