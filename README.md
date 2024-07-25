@@ -6,7 +6,7 @@
 ```
 !!plp [help] #插件帮助
 !!plp help #显示帮助消息
-!!plp list  #全部玩家列表
+!!plp list <index> #获取指定页玩家列表
 !!plp get <player> #获取玩家的最后游玩时间
 !!plp clean <player> #清除玩家的信息
 ```
@@ -27,7 +27,12 @@
     //plp list时的排序方向，如设为true，优先展示最近上线的玩家，否则优先展示最近没上过线的玩家
     "reverse": true,
     // 分页查询的每页大小,默认为10
-    "pageSize": 10
+    "pageSize": 10,
+    // 忽略的玩家名称正则列表
+    "ignorePlayerRegexes":[
+        "^bot_.*$",
+        "^Bot_.*$"
+        ]
     }
 
 ```
