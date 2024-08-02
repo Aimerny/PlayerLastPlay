@@ -1,3 +1,5 @@
+import json
+
 import math
 import re
 from typing import List
@@ -29,6 +31,8 @@ class Config(Serializable):
     pageSize: int = 10
     # 忽略玩家正则列表
     ignorePlayerRegexes: List[str] = ['^bot_.*$', '^Bot_.*$']
+    # 是否只统计白名单内玩家
+    only_whitelist_player: bool = False
 
 
 config: Config
@@ -85,7 +89,8 @@ def on_load(server: PluginServerInterface, old):
 
 
 def on_player_left(server: PluginServerInterface, player: str):
-    if is_ignore_player(player, config.ignorePlayerRegexes):
+    if (is_ignore_player(player, config.ignorePlayerRegexes) or
+            (config.only_whitelist_player and player not in get_whitelist_player())):
         return
     now = datetime.datetime.now().strftime('%Y-%m-%d')
     data[player] = now
@@ -124,7 +129,6 @@ def player_list(source: CommandSource, context):
     offline_result_list = []
     result_list = []
     # 先统计在线的玩家
-    print(online_players)
     for player in online_players:
         # 跳过假人
         if not is_ignore_player(player, config.ignorePlayerRegexes):
@@ -140,7 +144,8 @@ def player_list(source: CommandSource, context):
     sorted_off_players = sort_date(offline_players)
     for player in sorted_off_players:
         # 按游玩先后顺序排序
-        offline_result_list.append((player.player, player.last_date.strftime("%Y-%m-%d"), get_color_by_activity(player.activity)))
+        offline_result_list.append(
+            (player.player, player.last_date.strftime("%Y-%m-%d"), get_color_by_activity(player.activity)))
     # 查分页
     result_list.extend(online_result_list)
     result_list.extend(offline_result_list)
@@ -177,7 +182,8 @@ def get_player(source, context):
         resp = RText(f'玩家{player}当前在线').set_color(RColor.green)
     elif player in data:
         player_info = PlayerInfo(player, datetime.datetime.strptime(data[player], '%Y-%m-%d'))
-        resp = RText(f'玩家{player}最近的游玩时间为{data[player]}').set_color(get_color_by_activity(player_info.get_activity()))
+        resp = RText(f'玩家{player}最近的游玩时间为{data[player]}').set_color(
+            get_color_by_activity(player_info.get_activity()))
     else:
         resp = RText(f'当前没有玩家{player}的游玩时间').set_color(RColor.yellow)
     source.reply(resp)
@@ -212,6 +218,19 @@ def get_online_players() -> list:
 def sort_date(players: List[PlayerInfo]) -> List[PlayerInfo]:
     sorted_player_list = sorted(players, key=lambda player: player.last_date.timestamp(), reverse=config.reverse)
     return sorted_player_list
+
+
+def get_whitelist_player() -> List[str]:
+    mcdr_config = __mcdr_server.get_mcdr_config()
+    server_path = mcdr_config.get('working_directory')
+    whitelist_path = f'{server_path}/whitelist.json'
+
+    whitelist = []
+    with open(whitelist_path, 'r', encoding='UTF-8') as f:
+        whitelist_json = json.load(f)
+    for player in whitelist_json:
+        whitelist.append(player['name'])
+    return whitelist
 
 
 def get_color_by_activity(activity: str) -> RColor:
