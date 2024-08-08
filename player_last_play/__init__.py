@@ -163,6 +163,9 @@ def player_list(source: CommandSource, context):
             return source.reply('超过总页数,无法查询')
 
         def convert_to_rtext(player_name, time, color):
+            time_delta = calc_time_delta(time)
+            if time_delta > 0:
+                return RText(f'|-> {player_name}:{time}({time_delta}天未上线)\n', color=color)
             return RText(f'|-> {player_name}:{time}\n', color=color)
 
         for player_tuple in cur_page:
@@ -231,6 +234,14 @@ def get_whitelist_player() -> List[str]:
     for player in whitelist_json:
         whitelist.append(player['name'])
     return whitelist
+
+
+def calc_time_delta(last_time_str: str):
+    if last_time_str == '在线':
+        return 0
+    last_time = datetime.datetime.strptime(last_time_str, '%Y-%m-%d')
+    now = datetime.datetime.now()
+    return (now - last_time).days
 
 
 def get_color_by_activity(activity: str) -> RColor:
