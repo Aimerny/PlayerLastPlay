@@ -1,4 +1,10 @@
 # PlayerLastPlay
+
+[![Issues](https://img.shields.io/github/issues/Aimerny/playerLastPlay?style=flat-square)](https://github.com/Aimerny/playerLastPlay/issues)
+[![Pull Requests](https://img.shields.io/github/issues-pr/Aimerny/playerLastPlay?style=flat-square)](https://github.com/Aimerny/playerLastPlay/pulls)
+[![Release](https://img.shields.io/github/v/release/Aimerny/playerLastPlay?include_prereleases&style=flat-square)](https://github.com/Aimerny/playerLastPlay/releases)
+[![Github Release Downloads](https://img.shields.io/github/downloads/Aimerny/playerLastPlay/total?label=Github%20Release%20Downloads&style=flat-square)](https://github.com/Aimerny/playerLastPlay/releases)
+
 统计玩家最后一次上线时间，方便查看玩家活跃度，清理僵尸（bushi
 
 ## 使用姿势
